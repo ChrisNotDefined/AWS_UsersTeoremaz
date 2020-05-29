@@ -3,10 +3,13 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { OK } from 'http-status-codes';
 import { respond } from './utils/response';
+import UserController from './Controllers/UserController';
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+UserController.mountController(app);
 
 /**
  * @api {GET} /api/node-js-express-template/hello Hello

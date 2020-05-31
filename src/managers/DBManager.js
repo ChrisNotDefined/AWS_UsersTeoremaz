@@ -26,7 +26,9 @@ export default class DBManager {
 
   async get() {
     const users = await this.db.scan().exec();
-    return users.map(p => this.fromDBResponse(p));
+    const ans = users.map(p => this.fromDBResponse(p));
+    console.log(ans);
+    return ans;
   }
 
   async getByKey() {
@@ -35,11 +37,11 @@ export default class DBManager {
   }
 
   create() {
-    return this.db.create(this.toDBFormat());
+    return this.db.create({ ...this.getKey(), ...this.toDBFormat() });
   }
 
-  update(prevUserName) {
-    return this.db.update(prevUserName || this.getKey(), this.toDBFormat());
+  update() {
+    return this.db.update(this.getKey(), this.toDBFormat());
   }
 
   delete() {

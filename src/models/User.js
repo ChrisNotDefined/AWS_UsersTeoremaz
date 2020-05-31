@@ -1,3 +1,4 @@
+import { sha512 } from 'js-sha512';
 import DBManager from '../managers/DBManager';
 
 const usersDBSchema = {
@@ -7,7 +8,11 @@ const usersDBSchema = {
   },
   email: String,
   completeName: String,
-  password: String
+  password: String,
+  courses: {
+    type: Array,
+    schema: [String]
+  }
 };
 
 export default class User extends DBManager {
@@ -19,22 +24,28 @@ export default class User extends DBManager {
 
   password;
 
-  constructor(username, email, completeName, password) {
+  courses;
+
+  constructor(username, email, completeName, password, courses) {
     super('users-teoremaz', usersDBSchema);
     this.username = username;
     this.email = email;
     this.completeName = completeName;
     this.password = password;
+    this.courses = courses;
   }
 
   toDBFormat() {
     return {
-      ...this
+      email: this.email,
+      completeName: this.completeName,
+      password: this.password,
+      courses: this.courses
     };
   }
 
   getKey() {
-    return this.username;
+    return { username: this.username };
   }
 
   async verifyLogin() {
@@ -43,21 +54,20 @@ export default class User extends DBManager {
     const user = await this.getByKey();
 
     if (!user) return false;
-
-    if (user.password === toVerify.password) {
-      return true;
+    if (user.password === sha512(toVerify.password)) {
+      return user;
     }
 
     return false;
   }
 
-  static newUser(username, email, completeName, password) {
-    return new User(username, email, completeName, password);
+  static newUser(username, email, completeName, password, courses) {
+    return new User(username, email, completeName, sha512(password), courses);
   }
 
   // eslint-disable-next-line class-methods-use-this
   fromDBResponse(user) {
-    const { username, email, completeName, password } = user;
-    return new User(username, email, completeName, password);
+    const { username, email, completeName, password, courses } = user;
+    return new User(username, email, completeName, password, courses);
   }
 }

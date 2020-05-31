@@ -21,7 +21,6 @@ export default class {
   }
 
   static handleUnknownError(res, e) {
-    console.error(e);
     respond(res, INTERNAL_SERVER_ERROR, {
       message: e.message
     });

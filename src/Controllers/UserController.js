@@ -11,9 +11,14 @@ export default class UserController extends Controller {
   }
 
   initialize() {
+    // GetAll Users (Admin Only)
     this.app.get(UserController.basePath, UserController.getAllUsers);
+    // Login of an user
     this.app.post(`${UserController.basePath}/login`, UserController.login);
+    // Creation of an user
     this.app.post(UserController.basePath, UserController.createUser);
+    // Edition of an user
+    this.app.put(`${UserController.basePath}/:key`, UserController.updateUser);
   }
 
   static async getAllUsers(req, res) {
@@ -58,7 +63,13 @@ export default class UserController extends Controller {
 
   static async createUser(req, res) {
     try {
-      const expectedParams = ['username', 'email', 'completeName', 'password'];
+      const expectedParams = [
+        'username',
+        'email',
+        'completeName',
+        'password',
+        'courses'
+      ];
       const validationErrors = [];
 
       expectedParams.forEach(key => {
@@ -74,46 +85,52 @@ export default class UserController extends Controller {
         return;
       }
 
-      const { username, email, completeName, password } = req.body;
+      const { username, email, completeName, password, courses } = req.body;
 
-      const user = User.newUser(username, email, completeName, password);
+      const user = User.newUser(
+        username,
+        email,
+        completeName,
+        password,
+        courses
+      );
 
       await user.create();
 
       respond(res, OK, user);
     } catch (e) {
-      this.handleUnknownError(res, e);
+      UserController.handleUnknownError(res, e);
     }
   }
 
   static async updateUser(req, res) {
     try {
-      const allowedParams = ['username', 'email', 'completeName', 'password'];
-      const validationErrors = [];
-      allowedParams.forEach(key => {
-        if (!req.body[key]) {
-          validationErrors.push(`"${key}" value not specified`);
-        }
-      });
-
-      if (validationErrors.length > 0) {
-        respond(res, BAD_REQUEST, {
-          messsage: validationErrors.join('\n')
-        });
-      }
-
-      const { username, email, completeName, password } = req.body;
-      const user = await new User(username).getByKey();
+      const { key } = req.params;
+      const user = await new User(key).getByKey();
       if (!user) {
         respond(res, NOT_FOUND);
         return;
       }
+      const allowedParams = ['email', 'completeName', 'password', 'courses'];
+      let isAssigned = false;
+      Object.keys(req.body).forEach(param => {
+        if (allowedParams.includes(param)) {
+          user[param] = req.body[param];
+          isAssigned = true;
+        }
+      });
 
+      if (!isAssigned) {
+        respond(res, BAD_REQUEST, {
+          messsage: 'No new value assigned'
+        });
+        return;
+      }
       await user.update();
 
       respond(res, OK, user);
     } catch (e) {
-      this.handleUnknownError(res, e);
+      UserController.handleUnknownError(res, e);
     }
   }
 }
